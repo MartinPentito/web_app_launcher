@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Riot Launcher</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-logo">
+            <div class="riot-logo">RIOT</div>
+            <div class="loading-spinner"></div>
+        </div>
+        <div class="loading-text">Cargando...</div>
+    </div>
+
+    <!-- Aplicación Principal -->
+    <div id="app" class="app" style="display: none;">
+
+        <!-- Menú móvil se crea dinámicamente con JavaScript -->
+
+        <div class="title-bar">
+            <!-- Menú Hamburguesa (solo móvil) -->
+            <button class="mobile-menu-toggle" id="mobile-menu-toggle" onclick="toggleMobileMenu()">
+                <div class="hamburger" id="hamburger">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </button>
+            
+            <div class="title-bar-logo">
+                <span class="riot-text">RIOT</span>
+            </div>
+        </div>
+
+        <!-- Contenido Principal -->
+        <div class="app-content">
+            <!-- Barra Lateral -->
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <div class="user-info">
+                        <div class="username">Usuario</div>
+                        <div class="user-status">En línea</div>
+                    </div>
+                </div>
+                
+                <nav class="sidebar-nav">
+                    <button class="nav-item active" onclick="showGameView('aventura')">
+                        <span class="nav-icon">🗺️</span>
+                        <span class="nav-label">Aventura</span>
+                    </button>
+                    <button class="nav-item" onclick="showGameView('estrategia')">
+                        <span class="nav-icon">⚔️</span>
+                        <span class="nav-label">Estrategia</span>
+                    </button>
+                    <button class="nav-item" onclick="showGameView('indie')">
+                        <span class="nav-icon">🎨</span>
+                        <span class="nav-label">Indie</span>
+                    </button>
+                    <button class="nav-item" onclick="showGameView('accion')">
+                        <span class="nav-icon">🔫</span>
+                        <span class="nav-label">Acción</span>
+                    </button>
+                    <button class="nav-item" onclick="showGameView('puzzle')">
+                        <span class="nav-icon">🧩</span>
+                        <span class="nav-label">Puzzle</span>
+                    </button>
+                </nav>
+                
+                <div class="sidebar-footer">
+                    <div class="riot-games-logo">
+                        <span>RIOT GAMES</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contenido Principal -->
+            <main class="main-content">
+                <!-- Vista Juego de Aventura -->
+                <div id="aventura-view" class="game-view" style="display: block;">
+                    <div class="game-detail-container" data-game-id="mi-juego-aventura">
+                        <!-- El contenido se cargará dinámicamente -->
+                    </div>
+                </div>
+
+                <!-- Vista Juego de Estrategia -->
+                <div id="estrategia-view" class="game-view" style="display: none;">
+                    <div class="game-detail-container" data-game-id="mi-juego-estrategia">
+                        <!-- El contenido se cargará dinámicamente -->
+                    </div>
+                </div>
+
+                <!-- Vista Juego Indie -->
+                <div id="indie-view" class="game-view" style="display: none;">
+                    <div class="game-detail-container" data-game-id="mi-juego-indie">
+                        <!-- El contenido se cargará dinámicamente -->
+                    </div>
+                </div>
+
+                <!-- Vista Juego de Acción -->
+                <div id="accion-view" class="game-view" style="display: none;">
+                    <div class="game-detail-container" data-game-id="mi-juego-accion">
+                        <!-- El contenido se cargará dinámicamente -->
+                    </div>
+                </div>
+
+                <!-- Vista Juego de Puzzle -->
+                <div id="puzzle-view" class="game-view" style="display: none;">
+                    <div class="game-detail-container" data-game-id="mi-juego-puzzle">
+                        <!-- El contenido se cargará dinámicamente -->
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Notificaciones -->
+    <div id="notifications-container" class="notifications-container"></div>
+
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/gameManager.js"></script>
+    <script>
+        let currentView = 'aventura';
+        let gameManager = null;
+
+        function showGameView(viewName) {
+            // Actualizar botones del menú desktop
+            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+            if (event && event.target) {
+                event.target.classList.add('active');
+            } else {
+                // Si no hay evento, buscar el botón correspondiente
+                const desktopBtn = document.querySelector(`.nav-item[onclick*="${viewName}"]`);
+                if (desktopBtn) desktopBtn.classList.add('active');
+            }
+            
+            // Actualizar botón activo en menú móvil JS (si existe)
+            if (mobileMenuElement) {
+                const buttons = mobileMenuElement.querySelectorAll('button');
+                buttons.forEach(btn => {
+                    if (btn.onclick && btn.onclick.toString().includes(viewName)) {
+                        btn.style.background = '#C89B3C';
+                        btn.style.color = '#0F1419';
+                        btn.style.fontWeight = 'bold';
+                    } else {
+                        btn.style.background = '#0F1419';
+                        btn.style.color = '#F0E6D2';
+                        btn.style.fontWeight = 'normal';
+                    }
+                });
+            }
+            
+            // Cambiar vista
+            document.querySelectorAll('.game-view').forEach(view => view.style.display = 'none');
+            
+            const targetView = document.getElementById(`${viewName}-view`);
+            if (targetView) {
+                targetView.style.display = 'block';
+                currentView = viewName;
+                loadGameContent(viewName);
+            }
+        }
+
+        function loadGameContent(viewName) {
+            if (!gameManager) return;
+            
+            const gameMapping = {
+                'aventura': 'mi-juego-aventura',
+                'estrategia': 'mi-juego-estrategia', 
+                'indie': 'mi-juego-indie',
+                'accion': 'mi-juego-accion',
+                'puzzle': 'mi-juego-puzzle'
+            };
+
+            const gameId = gameMapping[viewName];
+            const game = gameManager.getGameById(gameId);
+            const container = document.querySelector(`[data-game-id="${gameId}"]`);
+            
+            if (!game || !container) return;
+
+            container.innerHTML = `
+                <div class="game-detail-header">
+                    <div class="game-detail-image">
+                        <img src="${game.image}" alt="${game.title}">
+                        ${game.installed ? '<div class="game-status-overlay"><span class="status-badge installed">✓ Instalado</span></div>' : ''}
+                    </div>
+                    <div class="game-detail-info">
+                        <h1 class="game-detail-title">${game.title}</h1>
+                        <p class="game-detail-category">${game.category}</p>
+                        <p class="game-detail-description">${game.description}</p>
+                        
+                        <div class="game-detail-specs">
+                            <div class="spec-item"><strong>Versión:</strong> <span>${game.version}</span></div>
+                            <div class="spec-item"><strong>Tamaño:</strong> <span>${game.size}</span></div>
+                            <div class="spec-item"><strong>Última vez jugado:</strong> <span>${game.lastPlayed}</span></div>
+                            <div class="spec-item"><strong>Tiempo jugado:</strong> <span>${game.playTime}</span></div>
+                        </div>
+
+                        <div class="game-detail-actions">
+                            ${game.installed ? 
+                                '<button class="btn btn-primary" onclick="launchGame(\''+gameId+'\')">🎮 Jugar</button>' :
+                                '<button class="btn btn-primary" onclick="installGame(\''+gameId+'\')">📥 Instalar</button>'
+                            }
+                            <button class="btn btn-secondary" onclick="showGameInfo('${gameId}')">ℹ️ Info</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="game-detail-content">
+                    <div class="game-detail-section">
+                        <h2>Requisitos del Sistema</h2>
+                        <div class="requirements-grid">
+                            <div class="requirement-item"><strong>SO:</strong> <span>${game.requirements.os.join(', ')}</span></div>
+                            <div class="requirement-item"><strong>RAM:</strong> <span>${game.requirements.ram}</span></div>
+                            <div class="requirement-item"><strong>Almacenamiento:</strong> <span>${game.requirements.storage}</span></div>
+                            <div class="requirement-item"><strong>Procesador:</strong> <span>${game.requirements.processor}</span></div>
+                        </div>
+                    </div>
+
+                    <div class="game-detail-section">
+                        <h2>Información Adicional</h2>
+                        <div class="additional-info">
+                            <div class="info-item"><strong>Directorio:</strong> <span>${game.installDir}</span></div>
+                            <div class="info-item"><strong>Ejecutable:</strong> <span>${game.executablePath}</span></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function launchGame(gameId) {
+            if (gameManager) {
+                gameManager.launchGame(gameId);
+                Utils.showNotification('Lanzando juego...', 'info');
+            }
+        }
+
+        function installGame(gameId) {
+            if (gameManager) {
+                gameManager.downloadGame(gameId);
+                Utils.showNotification('Iniciando instalación...', 'info');
+            }
+        }
+
+        function showGameInfo(gameId) {
+            const game = gameManager.getGameById(gameId);
+            Utils.showNotification(`${game.title} - ${game.size}`, 'info');
+        }
+
+        // Menú móvil creado completamente con JavaScript
+        let mobileMenuOpen = false;
+        let mobileMenuElement = null;
+        let overlayElement = null;
+
+        function createMobileMenu() {
+            console.log('🔨 Creating mobile menu with JavaScript');
+            
+            // Crear overlay
+            overlayElement = document.createElement('div');
+            overlayElement.id = 'js-mobile-overlay';
+            overlayElement.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.8);
+                z-index: 99998;
+                display: none;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            `;
+            overlayElement.onclick = closeMobileMenu;
+            document.body.appendChild(overlayElement);
+            
+            // Crear menú
+            mobileMenuElement = document.createElement('div');
+            mobileMenuElement.id = 'js-mobile-menu';
+            mobileMenuElement.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: -280px;
+                width: 280px;
+                height: 100%;
+                background: #1E2328;
+                z-index: 99999;
+                transition: left 0.3s ease;
+                border-right: 3px solid #C89B3C;
+                box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+                display: flex;
+                flex-direction: column;
+            `;
+            
+            // Crear contenido del menú
+            mobileMenuElement.innerHTML = `
+                <div style="padding: 20px; border-bottom: 2px solid #C89B3C; text-align: center; background: #0F1419;">
+                    <div style="font-weight: bold; font-size: 18px; color: #F0E6D2; margin-bottom: 5px;">Usuario</div>
+                    <div style="font-size: 14px; color: #C89B3C;">En línea</div>
+                </div>
+                <div style="padding: 10px; flex: 1;">
+                    <button onclick="selectMobileGame('aventura')" style="width: calc(100% - 20px); display: flex; align-items: center; gap: 15px; padding: 16px 18px; margin: 5px 10px; background: #C89B3C; border: 1px solid #C89B3C; border-radius: 5px; color: #0F1419; cursor: pointer; font-size: 16px; text-align: left; font-weight: bold;">
+                        <span style="font-size: 20px;">🗺️</span>
+                        <span>Aventura</span>
+                    </button>
+                    <button onclick="selectMobileGame('estrategia')" style="width: calc(100% - 20px); display: flex; align-items: center; gap: 15px; padding: 16px 18px; margin: 5px 10px; background: #0F1419; border: 1px solid #C89B3C; border-radius: 5px; color: #F0E6D2; cursor: pointer; font-size: 16px; text-align: left;">
+                        <span style="font-size: 20px;">⚔️</span>
+                        <span>Estrategia</span>
+                    </button>
+                    <button onclick="selectMobileGame('indie')" style="width: calc(100% - 20px); display: flex; align-items: center; gap: 15px; padding: 16px 18px; margin: 5px 10px; background: #0F1419; border: 1px solid #C89B3C; border-radius: 5px; color: #F0E6D2; cursor: pointer; font-size: 16px; text-align: left;">
+                        <span style="font-size: 20px;">🎨</span>
+                        <span>Indie</span>
+                    </button>
+                    <button onclick="selectMobileGame('accion')" style="width: calc(100% - 20px); display: flex; align-items: center; gap: 15px; padding: 16px 18px; margin: 5px 10px; background: #0F1419; border: 1px solid #C89B3C; border-radius: 5px; color: #F0E6D2; cursor: pointer; font-size: 16px; text-align: left;">
+                        <span style="font-size: 20px;">🔫</span>
+                        <span>Acción</span>
+                    </button>
+                    <button onclick="selectMobileGame('puzzle')" style="width: calc(100% - 20px); display: flex; align-items: center; gap: 15px; padding: 16px 18px; margin: 5px 10px; background: #0F1419; border: 1px solid #C89B3C; border-radius: 5px; color: #F0E6D2; cursor: pointer; font-size: 16px; text-align: left;">
+                        <span style="font-size: 20px;">🧩</span>
+                        <span>Puzzle</span>
+                    </button>
+                </div>
+                <div style="padding: 20px; border-top: 2px solid #C89B3C; text-align: center;">
+                    <div style="font-size: 12px; font-weight: bold; color: #A09B8C; letter-spacing: 2px;">RIOT GAMES</div>
+                </div>
+            `;
+            
+            document.body.appendChild(mobileMenuElement);
+            console.log('✅ Mobile menu created successfully');
+        }
+        
+        function toggleMobileMenu() {
+            console.log('🍔 Toggle mobile menu - Current state:', mobileMenuOpen);
+            console.log('🍔 Menu element exists:', !!mobileMenuElement);
+            console.log('🍔 Overlay element exists:', !!overlayElement);
+            
+            if (!mobileMenuElement || !overlayElement) {
+                console.log('🔨 Creating mobile menu elements...');
+                createMobileMenu();
+                setTimeout(() => {
+                    openMobileMenu();
+                }, 100);
+                return;
+            }
+            
+            if (mobileMenuOpen) {
+                console.log('🔄 Menu is open, closing...');
+                closeMobileMenu();
+            } else {
+                console.log('🔄 Menu is closed, opening...');
+                openMobileMenu();
+            }
+        }
+        
+        function openMobileMenu() {
+            console.log('🔓 Opening mobile menu');
+            mobileMenuOpen = true;
+            
+            overlayElement.style.display = 'block';
+            setTimeout(() => {
+                overlayElement.style.opacity = '1';
+                mobileMenuElement.style.left = '0px';
+            }, 10);
+            
+            // Animar hamburguesa
+            const hamburger = document.getElementById('hamburger');
+            const menuToggle = document.getElementById('mobile-menu-toggle');
+            if (hamburger) {
+                hamburger.classList.add('active');
+            }
+            if (menuToggle) {
+                menuToggle.classList.add('active');
+            }
+        }
+        
+        function closeMobileMenu() {
+            console.log('🔒 Closing mobile menu');
+            mobileMenuOpen = false;
+            
+            overlayElement.style.opacity = '0';
+            mobileMenuElement.style.left = '-280px';
+            
+            setTimeout(() => {
+                overlayElement.style.display = 'none';
+            }, 300);
+            
+            // Restaurar hamburguesa
+            const hamburger = document.getElementById('hamburger');
+            const menuToggle = document.getElementById('mobile-menu-toggle');
+            if (hamburger) {
+                hamburger.classList.remove('active');
+            }
+            if (menuToggle) {
+                menuToggle.classList.remove('active');
+            }
+        }
+        
+        function selectMobileGame(gameName) {
+            console.log('🎮 Selecting mobile game:', gameName);
+            
+            // Actualizar botón activo en el menú móvil
+            const buttons = mobileMenuElement.querySelectorAll('button');
+            buttons.forEach(btn => {
+                if (btn.onclick.toString().includes(gameName)) {
+                    btn.style.background = '#C89B3C';
+                    btn.style.color = '#0F1419';
+                    btn.style.fontWeight = 'bold';
+                } else {
+                    btn.style.background = '#0F1419';
+                    btn.style.color = '#F0E6D2';
+                    btn.style.fontWeight = 'normal';
+                }
+            });
+            
+            // Cambiar vista
+            showGameView(gameName);
+            
+            // Cerrar menú
+            closeMobileMenu();
+        }
+
+        // Funciones simplificadas (mantenidas para compatibilidad)
+        function closeMobileMenuOld() {
+            if (mobileMenuOpen) {
+                closeMobileMenu();
+            }
+        }
+
+        function showGameViewMobile(viewName) {
+            selectMobileGame(viewName);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                document.getElementById('loading-screen').style.display = 'none';
+                document.getElementById('app').style.display = 'flex';
+                gameManager = new GameManager();
+                loadGameContent('aventura');
+                Utils.showNotification('¡Listo!', 'success');
+                
+                console.log('App initialized');
+                console.log('Sidebar found:', document.querySelector('.sidebar'));
+                console.log('Nav items found:', document.querySelectorAll('.nav-item').length);
+
+                // Configurar menú hamburguesa JavaScript
+                const menuToggle = document.getElementById('mobile-menu-toggle');
+                console.log('🔨 Initializing JavaScript mobile menu');
+                console.log('Menu toggle button found:', menuToggle);
+                
+                if (menuToggle) {
+                    menuToggle.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('💆 Hamburger button clicked!');
+                        toggleMobileMenu();
+                    });
+                    console.log('✅ Event listener added to hamburger button');
+                } else {
+                    console.error('❌ Menu toggle button not found!');
+                }
+                
+                // Crear menú si estamos en móvil
+                if (window.innerWidth <= 768) {
+                    console.log('📱 Mobile detected, creating menu');
+                    setTimeout(createMobileMenu, 500);
+                }
+
+                // Cerrar menú con ESC
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && mobileMenuOpen) {
+                        closeMobileMenu();
+                    }
+                });
+                
+                // Detectar cambios de tamaño de ventana
+                window.addEventListener('resize', () => {
+                    if (window.innerWidth <= 768) {
+                        if (!mobileMenuElement) {
+                            console.log('📱 Switched to mobile, creating menu');
+                            createMobileMenu();
+                        }
+                    } else {
+                        if (mobileMenuOpen) {
+                            closeMobileMenu();
+                        }
+                    }
+                });
+            }, 1500);
+        });
+    </script>
+</body>
+</html>

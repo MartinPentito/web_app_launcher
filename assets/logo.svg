@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <rect width="64" height="64" fill="#c89b3c" rx="8"/>
+  <rect x="4" y="4" width="56" height="56" fill="#1e2328" rx="4"/>
+  <path d="M32 12 L20 28 L32 24 L44 28 Z" fill="#c89b3c"/>
+  <rect x="24" y="28" width="16" height="20" fill="#c89b3c"/>
+  <rect x="28" y="32" width="8" height="12" fill="#1e2328"/>
+  <circle cx="30" cy="36" r="1" fill="#c89b3c"/>
+  <circle cx="34" cy="36" r="1" fill="#c89b3c"/>
+  <text x="32" y="56" text-anchor="middle" fill="#c89b3c" font-family="Arial" font-size="6" font-weight="bold">RIOT</text>
+</svg>

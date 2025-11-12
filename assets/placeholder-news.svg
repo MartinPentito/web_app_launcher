@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200" viewBox="0 0 400 200" fill="none">
+  <rect width="400" height="200" fill="#010a13"/>
+  <rect x="30" y="30" width="340" height="140" fill="#1e2328" stroke="#c89b3c" stroke-width="1" rx="6"/>
+  <circle cx="70" cy="60" r="8" fill="#c89b3c"/>
+  <rect x="90" y="55" width="80" height="6" fill="#f0e6d2" rx="3"/>
+  <rect x="90" y="65" width="120" height="4" fill="#a09b8c" rx="2"/>
+  <rect x="50" y="85" width="300" height="2" fill="#463714" rx="1"/>
+  <rect x="50" y="95" width="250" height="3" fill="#5bc0de" rx="1"/>
+  <rect x="50" y="105" width="280" height="3" fill="#5bc0de" rx="1"/>
+  <text x="200" y="135" text-anchor="middle" fill="#c89b3c" font-family="Arial" font-size="14" font-weight="bold">NEWS</text>
+  <text x="200" y="150" text-anchor="middle" fill="#a09b8c" font-family="Arial" font-size="10">Placeholder</text>
+</svg>
